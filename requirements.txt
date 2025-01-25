@@ -1,0 +1,6 @@
+PyQt5==5.15.9
+pyttsx3==2.90
+sounddevice        # For STT microphone capture (may need a wheels link on Windows)
+requests==2.31.0       # For calling Ollama's local REST API
+sqlite-utils==3.34     # Optional convenience library or just use built-in sqlite3
+openai-whisper
