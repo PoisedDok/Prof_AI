@@ -1,29 +1,27 @@
 #!/usr/bin/env python3
 import sys
+import os
 import logging
+import importlib
 from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QToolButton, QMenu,
     QPushButton, QLabel, QSplitter, QTextEdit, QLineEdit, QComboBox,
-    QDockWidget, QTreeWidget, QTreeWidgetItem, QAction
+    QDockWidget, QTreeWidget, QTreeWidgetItem, QAction, QMessageBox
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
 from PyQt5.QtGui import QFont, QIcon, QTextCursor
 
-# Simulation Widgets (replace with actual or placeholders)
-from simulation import (
-    PendulumWidget, ProjectileMotionWidget, ElectricCircuitWidget, 
-    StringTheoryWidget, ThermodynamicsWidget, OpticsWidget, 
-    WaveWidget, GravityWidget, MagneticFieldWidget
-)
-
-# AI / DB
+# AI / DB Imports
 from expert_mode import expert_mode_query
 from course_mode import load_demo_data
 from db import create_or_get_user
 from workers import AIWorker
-from course_data import get_class_units, build_llm_prompt,get_class_subjects
+from course_data import get_class_units, build_llm_prompt, get_class_subjects
 from wait_function import BackgroundWaitFunction
 from tts import *
+
+# Dynamic Simulation Loading Imports
+import importlib.util
 
 class MainWindow(QMainWindow):
     # States for the guided flow
@@ -45,7 +43,7 @@ class MainWindow(QMainWindow):
         self.tts_engine = tts_engine
         self.voice_enabled = False  # Initially voice is off
 
-        # Dark / Light
+        # Dark / Light Mode
         self.dark_mode = False
 
         # Demo user & data
@@ -62,6 +60,10 @@ class MainWindow(QMainWindow):
         # Keep a reference to the subject's units
         self.available_units = {}
         self.available_topics = []
+
+        # Load Simulation Classes Dynamically
+        self.simulation_classes = {}
+        self._load_simulations()
 
         # Layout setup
         main_container = QWidget()
@@ -98,6 +100,38 @@ class MainWindow(QMainWindow):
         self.background_wait_function = BackgroundWaitFunction(self.question_input)
 
         logging.debug("MainWindow initialized.")
+
+    def _load_simulations(self):
+        """
+        Dynamically load all simulation modules from the 'simulations' folder.
+        Each simulation must have a class that inherits from QWidget and is named
+        with the pattern <Name>Simulation in <name>_sim.py.
+        """
+        simulations_path = os.path.join(os.path.dirname(__file__), "simulations")
+        if not os.path.isdir(simulations_path):
+            logging.error(f"Simulations directory not found: {simulations_path}")
+            return
+
+        sys.path.insert(0, simulations_path)  # Add simulations folder to path
+
+        for file in os.listdir(simulations_path):
+            if file.endswith("_sim.py") and not file.startswith("__"):
+                module_name = file[:-3]  # Strip .py
+                try:
+                    module = importlib.import_module(module_name)
+                    # Assume class name is CamelCase of module name without '_sim'
+                    class_name = ''.join(word.capitalize() for word in module_name.split('_')[:-1]) + "Simulation"
+                    sim_class = getattr(module, class_name)
+                    # Derive display name from class name
+                    sim_display_name = class_name.replace("Simulation", "").replace("_", " ")
+                    self.simulation_classes[sim_display_name] = sim_class
+                    logging.debug(f"Loaded simulation: {sim_display_name}")
+                except AttributeError:
+                    logging.error(f"Class {class_name} not found in module {module_name}")
+                except Exception as e:
+                    logging.error(f"Failed to load simulation {module_name}: {e}")
+
+        sys.path.pop(0)  # Clean up path
 
     def _handle_tts_speaking(self):
         self.background_wait_function.set_equalizer(True)
@@ -299,13 +333,12 @@ class MainWindow(QMainWindow):
         message = "\n".join(lines)
         self._append_chat_message(message, sender='ai')
         
-        
     def user_selected_unit(self, unit_number: str):
         """
         Called when user typed the unit number in chat while in STATE_AWAIT_UNIT.
         """
         if unit_number not in self.available_units:
-            self._append_chat_message("Invalid unit number. Please try again or type 'stop' to cancel.", sender='ai')
+            self._append_chat_message("Invalid unit number. Please try again or type 'stop'.", sender='ai')
             return
 
         self.selected_unit_number = unit_number
@@ -326,9 +359,9 @@ class MainWindow(QMainWindow):
         """
         # Check if they typed an integer index
         try:
-            idx = int(topic_input)
-            if 1 <= idx <= len(self.available_topics):
-                topic_name = self.available_topics[idx - 1]
+            topic_index = int(topic_input)
+            if 1 <= topic_index <= len(self.available_topics):
+                topic_name = self.available_topics[topic_index - 1]
             else:
                 self._append_chat_message("Invalid topic index. Try again or 'stop'.", sender='ai')
                 return
@@ -361,13 +394,14 @@ class MainWindow(QMainWindow):
         # 1. Cancel flow state
         self.flow_state = self.STATE_IDLE
         self.selected_subject = None
+        self.selected_class_number = None
         self.selected_unit_number = None
         self.selected_topic = None
         self.available_units = {}
-        self.available_topics = []
+        self.available_topics = {}
 
         # 2. Cancel AIWorker safely
-        if hasattr(self, 'worker'):
+        if hasattr(self, 'worker') and hasattr(self, 'worker_thread'):
             try:
                 logging.debug("Cancelling AIWorker...")
                 self.worker.cancel()  # Set cancellation flag
@@ -392,7 +426,6 @@ class MainWindow(QMainWindow):
         self.question_input.setDisabled(False)
 
         logging.debug("All processes stopped.")
-
 
 
     # -------------------------------------------------------------------------
@@ -587,17 +620,7 @@ class MainWindow(QMainWindow):
         top_row = QHBoxLayout()
         label = QLabel("Simulation Game:")
         self.simulation_selector = QComboBox()
-        self.simulation_selector.addItems([
-            "Pendulum",
-            "Projectile Motion",
-            "Electric Circuit",
-            "String Theory",
-            "Thermodynamics",
-            "Optics (Lens)",
-            "Waves (Standing Wave)",
-            "Gravity (Orbits)",
-            "Magnetic Fields"
-        ])
+        self.simulation_selector.addItems(sorted(self.simulation_classes.keys()))
         self.simulation_selector.currentTextChanged.connect(self._select_simulation)
         top_row.addWidget(label)
         top_row.addWidget(self.simulation_selector)
@@ -605,7 +628,7 @@ class MainWindow(QMainWindow):
 
         self.simulation_display = QWidget()
         self.simulation_display.setLayout(QVBoxLayout())
-        placeholder = QLabel("Game-like interactive simulation shown here.")
+        placeholder = QLabel("Select a simulation from the dropdown above.")
         placeholder.setFont(QFont("Arial", 14))
         placeholder.setAlignment(Qt.AlignCenter)
         self.simulation_display.layout().addWidget(placeholder)
@@ -616,24 +639,30 @@ class MainWindow(QMainWindow):
     def _trigger_simulation(self, text_response):
         txt = text_response.lower()
         self.background_wait_function.stop_waiting()
-        if "pendulum" in txt:
-            self.simulation_selector.setCurrentText("Pendulum")
-        elif "projectile" in txt:
-            self.simulation_selector.setCurrentText("Projectile Motion")
-        elif "circuit" in txt:
-            self.simulation_selector.setCurrentText("Electric Circuit")
-        elif "string theory" in txt:
-            self.simulation_selector.setCurrentText("String Theory")
-        elif "thermodynamics" in txt:
-            self.simulation_selector.setCurrentText("Thermodynamics")
-        elif "optic" in txt or "lens" in txt:
-            self.simulation_selector.setCurrentText("Optics (Lens)")
-        elif "wave" in txt:
-            self.simulation_selector.setCurrentText("Waves (Standing Wave)")
-        elif "gravity" in txt or "orbit" in txt:
-            self.simulation_selector.setCurrentText("Gravity (Orbits)")
-        elif "magnetic" in txt:
-            self.simulation_selector.setCurrentText("Magnetic Fields")
+        # Map text_response to simulation names
+        simulation_map = {
+            "pendulum": "Pendulum",
+            "projectile": "Projectile Motion",
+            "circuit": "Electric Circuit",
+            "string theory": "String Theory",
+            "thermodynamics": "Thermodynamics",
+            "optic": "Optics (Lens)",
+            "lens": "Optics (Lens)",
+            "wave": "Waves (Standing Wave)",
+            "gravity": "Gravity (Orbits)",
+            "orbit": "Gravity (Orbits)",
+            "magnetic": "Magnetic Fields"
+        }
+
+        matched = False
+        for key, sim_name in simulation_map.items():
+            if key in txt:
+                self.simulation_selector.setCurrentText(sim_name)
+                matched = True
+                break
+
+        if not matched:
+            logging.debug("No matching simulation found in response.")
 
     def _select_simulation(self, sim_name):
         layout = self.simulation_display.layout()
@@ -642,24 +671,13 @@ class MainWindow(QMainWindow):
             if item.widget():
                 item.widget().deleteLater()
 
-        if sim_name == "Pendulum":
-            sim = PendulumWidget()
-        elif sim_name == "Projectile Motion":
-            sim = ProjectileMotionWidget()
-        elif sim_name == "Electric Circuit":
-            sim = ElectricCircuitWidget()
-        elif sim_name == "String Theory":
-            sim = StringTheoryWidget()
-        elif sim_name == "Thermodynamics":
-            sim = ThermodynamicsWidget()
-        elif sim_name == "Optics (Lens)":
-            sim = OpticsWidget()
-        elif sim_name == "Waves (Standing Wave)":
-            sim = WaveWidget()
-        elif sim_name == "Gravity (Orbits)":
-            sim = GravityWidget()
-        elif sim_name == "Magnetic Fields":
-            sim = MagneticFieldWidget()
+        sim_class = self.simulation_classes.get(sim_name, None)
+        if sim_class:
+            try:
+                sim = sim_class()
+            except Exception as e:
+                sim = QLabel("Failed to load simulation.")
+                logging.error(f"Failed to instantiate simulation {sim_name}: {e}")
         else:
             sim = QLabel("No simulation available.")
             sim.setFont(QFont("Arial", 14))
@@ -803,14 +821,17 @@ class MainWindow(QMainWindow):
             }
             """
 
-
 # Standalone test
 if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication
     import sys
     logging.basicConfig(level=logging.DEBUG)
 
+    # Placeholder for STT and TTS engines
+    stt_engine = None
+    tts_engine = None
+
     app = QApplication(sys.argv)
-    window = MainWindow(None, None)
+    window = MainWindow(stt_engine, tts_engine)
     window.show()
     sys.exit(app.exec_())

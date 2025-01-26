@@ -6,33 +6,39 @@ class TTSThread(QThread):
     speaking = pyqtSignal()
     finished = pyqtSignal()
 
-    def __init__(self, text, engine):
+    def __init__(self, text):
         super().__init__()
         self.text = text
-        self.engine = engine
 
     def run(self):
         self.speaking.emit()  # Emit the speaking signal
-        self.engine.say(self.text)
-        self.engine.runAndWait()
-        self.finished.emit()
+
+        # Create a new pyttsx3 engine instance for this thread
+        engine = pyttsx3.init()
+        engine.setProperty("rate", 160)  # Set the desired rate
+        engine.setProperty("volume", 1.0)  # Set the desired volume
+        voices = engine.getProperty("voices")
+        if voices:
+            engine.setProperty("voice", voices[0].id)  # Set the desired voice
+
+        # Run the text-to-speech
+        engine.say(self.text)
+        engine.runAndWait()
+
+        self.finished.emit()  # Emit the finished signal
 
 
 class OfflineTTS:
     def __init__(self):
-        self.engine = pyttsx3.init()
-        voices = self.engine.getProperty("voices")
-        if voices:
-            self.engine.setProperty("voice", voices[0].id)  # Change index for a different voice
-        self.engine.setProperty("rate", 160)
-        self.engine.setProperty("volume", 1.0)
         self.tts_thread = None  # Initialize tts_thread attribute
 
     def speak(self, text, on_speaking=None, on_finished=None):
+        # Stop any ongoing speech safely
         if self.tts_thread and self.tts_thread.isRunning():
-            self.tts_thread.terminate()  # Stop any ongoing speech safely
+            self.tts_thread.terminate()
 
-        self.tts_thread = TTSThread(text, self.engine)
+        # Create a new TTSThread for the current speech
+        self.tts_thread = TTSThread(text)
         if on_speaking:
             self.tts_thread.speaking.connect(on_speaking)
         if on_finished:
