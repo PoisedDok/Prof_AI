@@ -22,8 +22,8 @@ from course_mode import load_demo_data
 from db import create_or_get_user
 from workers import AIWorker
 from course_data import get_class_units, build_llm_prompt,get_class_subjects
-
-
+from wait_function import BackgroundWaitFunction
+from tts import *
 
 class MainWindow(QMainWindow):
     # States for the guided flow
@@ -60,11 +60,10 @@ class MainWindow(QMainWindow):
         self.selected_topic = None
 
         # Keep a reference to the subject's units
-        self.available_units = {}    # unit_number -> { 'name':..., 'topics': {...} }
-        # If we want to store them for the selected unit
-        self.available_topics = []   # list of topic names for that unit
+        self.available_units = {}
+        self.available_topics = []
 
-        # Layout: top bar, central splitter, bottom score
+        # Layout setup
         main_container = QWidget()
         main_layout = QVBoxLayout(main_container)
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -95,7 +94,36 @@ class MainWindow(QMainWindow):
         # Apply stylesheet
         self.setStyleSheet(self._global_style(light_mode=True))
 
+        # Background wait function for TTS visualization
+        self.background_wait_function = BackgroundWaitFunction(self.question_input)
+
         logging.debug("MainWindow initialized.")
+
+    def _handle_tts_speaking(self):
+        self.background_wait_function.set_equalizer(True)
+
+    def _handle_tts_finished(self):
+        self.background_wait_function.set_equalizer(False)
+
+    def _send_message(self):
+        msg = self.question_input.text().strip()
+        if msg:
+            self._append_chat_message(msg, sender="user")
+            self.question_input.clear()
+            self.background_wait_function.start_waiting()
+            self._process_user_message(msg)
+
+    def _process_user_message(self, message):
+        # Process the user's message and handle AI response
+        response = "Processing message..."  # Placeholder
+        self._append_chat_message(response, sender="ai")
+
+        # Use TTS to speak the response
+        self.tts_engine.speak(
+            response,
+            on_speaking=self._handle_tts_speaking,
+            on_finished=self._handle_tts_finished,
+        )
 
     # -------------------------------------------------------------------------
     # A. Top Bar
@@ -428,9 +456,10 @@ class MainWindow(QMainWindow):
                     self._append_chat_message("Invalid unit number. Please try again or 'stop'.", sender='ai')
             except ValueError:
                 self._append_chat_message("Invalid input. Please enter a unit number.", sender='ai')
+            return
 
         # Check if user's message is a topic number or name
-        elif self.flow_state == self.STATE_AWAIT_TOPIC:
+        if self.flow_state == self.STATE_AWAIT_TOPIC:
             try:
                 topic_index = int(msg)
                 if 1 <= topic_index <= len(self.available_topics):
@@ -443,7 +472,11 @@ class MainWindow(QMainWindow):
                     self.user_selected_topic(msg)
                 else:
                     self._append_chat_message("Invalid topic name. Try again or 'stop'.", sender='ai')
+            return
 
+        # If not in any specific flow state, process as a normal chat message
+        if self.flow_state == self.STATE_IDLE:
+            self._process_user_message(msg)
 
     def _on_stop_flow_clicked(self):
         """
@@ -452,6 +485,7 @@ class MainWindow(QMainWindow):
         logging.debug("User pressed the STOP button.")
         self._append_chat_message("User pressed the STOP button. Cancelling flow...", sender='ai')
         self._stop_flow()
+        self.background_wait_function.stop_waiting()
 
     def _append_chat_message(self, message, sender='ai'):
         """
@@ -490,7 +524,7 @@ class MainWindow(QMainWindow):
         self.worker.finished.connect(self.worker.deleteLater)
         self.worker_thread.finished.connect(self.worker_thread.deleteLater)
         self.worker.error.connect(self._handle_ai_error)
-
+        self.background_wait_function.start_waiting()
         self.worker_thread.start()
 
     def _handle_ai_response(self, response):
@@ -498,12 +532,14 @@ class MainWindow(QMainWindow):
         Handles AI's response after processing the user's message.
         """
         self._append_chat_message(response, sender='ai')
+        self.background_wait_function.stop_waiting() 
 
         # Speak out loud if voice is enabled
         if self.voice_enabled:
             self.tts_engine.speak(response)
 
         self.question_input.setDisabled(False)
+        self.background_wait_function.stop_waiting()
 
         # Check if we want to trigger simulations
         self._trigger_simulation(response)
@@ -512,6 +548,7 @@ class MainWindow(QMainWindow):
     def _handle_ai_error(self, error_msg):
         self._append_chat_message(f"Error: {error_msg}", sender='ai')
         self.question_input.setDisabled(False)
+        self.background_wait_function.stop_waiting()
 
     def _send_to_llm(self, prompt):
         """
@@ -531,7 +568,7 @@ class MainWindow(QMainWindow):
         self.worker.finished.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
         self.worker.error.connect(self._handle_ai_error)
-
+        self.background_wait_function.start_waiting()
         self.thread.start()
 
     # -------------------------------------------------------------------------
@@ -574,6 +611,7 @@ class MainWindow(QMainWindow):
 
     def _trigger_simulation(self, text_response):
         txt = text_response.lower()
+        self.background_wait_function.stop_waiting()
         if "pendulum" in txt:
             self.simulation_selector.setCurrentText("Pendulum")
         elif "projectile" in txt:
