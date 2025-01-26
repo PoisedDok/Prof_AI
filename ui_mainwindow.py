@@ -221,24 +221,28 @@ class MainWindow(QMainWindow):
     def _on_course_item_clicked(self, item, column):
         logging.debug("Course item clicked: _on_course_item_clicked method entered")
         parent = item.parent()
-        if parent and parent.text(0) in ["Class 10", "Class 9", "Class 8"]:
+        if parent and "Class" in parent.text(0):
             logging.debug("Parent item is a class item")
-            grade_text = parent.text(0)  # e.g. 'Class 10'
-            subject_text = item.text(0)  # e.g. 'Physics'
+            grade_text = parent.text(0)  # e.g., 'Class 10'
+            subject_text = item.text(0)  # e.g., 'Physics'
 
             logging.debug(f"Course item clicked: {grade_text} -> {subject_text}")
-            class_number = int(grade_text.split(" ")[1])
+            try:
+                class_number = int(grade_text.split(" ")[1])
+            except (IndexError, ValueError):
+                logging.error("Invalid class number format")
+                return
 
             # Check if a course selection is already in progress
             if self.flow_state == self.STATE_AWAIT_UNIT:
                 logging.debug("Course selection already in progress")
-                
+
                 # If trying to select the same course, do nothing
                 if (self.selected_subject == subject_text and 
                     self.selected_class_number == class_number):
                     logging.debug("Same course selected, ignoring")
                     return
-                
+
                 # Prompt user about switching courses
                 switch_message = (
                     f"You are currently selecting units for Class {self.selected_class_number} {self.selected_subject}. "
@@ -246,21 +250,21 @@ class MainWindow(QMainWindow):
                     "Type 'yes' to switch or 'no' to continue with the current course."
                 )
                 self._append_chat_message(switch_message, sender='ai')
-                
+
                 # Store the new course details for potential switch
                 self.pending_subject = subject_text
                 self.pending_class_number = class_number
-                
+
                 return
 
             # If flow state is idle, start a new course flow
             logging.debug("Flow state is idle, proceeding with new flow")
             self.start_class_flow(subject_text, class_number)
 
-        elif item.text(0) in ["Class 10", "Class 9", "Class 8"]:
+        elif "Class" in item.text(0):
             logging.debug("Clicked on class item directly, doing nothing")
             pass
-    # -------------------------------------------------------------------------
+
     # Course Flow Methods
     # -------------------------------------------------------------------------
     def start_class_flow(self, subject: str, class_number: int):

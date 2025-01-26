@@ -1,3 +1,431 @@
+class1_data = {
+    "Physics": {
+        "units": {
+            "1": {
+                "name": "Introduction to Motion and Force",
+                "topics": {
+                    "Motion": "Understanding basic movement, speed, and direction.",
+                    "Push and Pull": "Explains simple forces like push and pull in daily life."
+                }
+            },
+            "2": {
+                "name": "Introduction to Light and Shadows",
+                "topics": {
+                    "Light": "Basic understanding of light and sources of light.",
+                    "Shadows": "Formation of shadows and their characteristics."
+                }
+            }
+        }
+    },
+    "Chemistry": {
+        "units": {
+            "1": {
+                "name": "Objects Around Us",
+                "topics": {
+                    "Solids, Liquids, and Gases": "Basic introduction to states of matter.",
+                    "Properties of Materials": "Simple properties like hard, soft, and flexible."
+                }
+            }
+        }
+    },
+    "Biology": {
+        "units": {
+            "1": {
+                "name": "Living and Non-Living Things",
+                "topics": {
+                    "Living Things": "Characteristics of living things such as growth and movement.",
+                    "Non-Living Things": "Understanding things that do not grow or move."
+                }
+            },
+            "2": {
+                "name": "Plants and Animals",
+                "topics": {
+                    "Plants": "Introduction to plants, leaves, and flowers.",
+                    "Animals": "Different types of animals and their habitats."
+                }
+            }
+        }
+    },
+    "AI": {
+        "units": {
+            "1": {
+                "name": "What is AI?",
+                "topics": {
+                    "Basic Definition": "Simple explanation of what AI means.",
+                    "AI in Toys": "Examples of AI in toys like robots and talking dolls."
+                }
+            }
+        }
+    }
+}
+
+class2_data = {
+    "Physics": {
+        "units": {
+            "1": {
+                "name": "Magnetism",
+                "topics": {
+                    "Magnets": "Introduction to magnets and their properties.",
+                    "Uses of Magnets": "Practical uses of magnets in daily life."
+                }
+            },
+            "2": {
+                "name": "Introduction to Water",
+                "topics": {
+                    "Water": "States of water - solid, liquid, and gas.",
+                    "Uses of Water": "Importance of water in our daily life."
+                }
+            }
+        }
+    },
+    "Chemistry": {
+        "units": {
+            "1": {
+                "name": "Air Around Us",
+                "topics": {
+                    "Composition of Air": "Simple introduction to oxygen, carbon dioxide, and nitrogen.",
+                    "Importance of Air": "Why air is essential for life."
+                }
+            }
+        }
+    },
+    "Biology": {
+        "units": {
+            "1": {
+                "name": "Our Body",
+                "topics": {
+                    "Sense Organs": "Introduction to our five sense organs.",
+                    "Body Parts": "Names and basic functions of body parts."
+                }
+            },
+            "2": {
+                "name": "Food and Health",
+                "topics": {
+                    "Healthy Foods": "Importance of eating healthy.",
+                    "Diseases": "Simple understanding of common diseases like colds and fever."
+                }
+            }
+        }
+    },
+    "AI": {
+        "units": {
+            "1": {
+                "name": "AI in Games",
+                "topics": {
+                    "AI in Video Games": "Understanding how AI is used in simple video games.",
+                    "Interactive Toys": "Examples of AI toys that respond to commands."
+                }
+            }
+        }
+    }
+}
+
+class3_data = {
+    "Physics": {
+        "units": {
+            "1": {
+                "name": "Heat and Temperature",
+                "topics": {
+                    "Heat": "Understanding hot and cold objects.",
+                    "Thermometers": "Simple introduction to how thermometers work."
+                }
+            },
+            "2": {
+                "name": "Earth and Sky",
+                "topics": {
+                    "Day and Night": "Explains the concept of day and night.",
+                    "Planets": "Introduction to planets in our solar system."
+                }
+            }
+        }
+    },
+    "Chemistry": {
+        "units": {
+            "1": {
+                "name": "Different Types of Materials",
+                "topics": {
+                    "Materials Around Us": "Simple understanding of wood, metal, and plastic.",
+                    "Natural vs. Man-Made Materials": "Difference between natural and synthetic materials."
+                }
+            }
+        }
+    },
+    "Biology": {
+        "units": {
+            "1": {
+                "name": "Plants",
+                "topics": {
+                    "Parts of Plants": "Basic functions of roots, stems, and leaves.",
+                    "Photosynthesis": "How plants make food using sunlight."
+                }
+            },
+            "2": {
+                "name": "Animals",
+                "topics": {
+                    "Types of Animals": "Simple classification of animals - herbivores, carnivores, omnivores.",
+                    "Habitats": "Different habitats of animals like forests and deserts."
+                }
+            }
+        }
+    },
+    "AI": {
+        "units": {
+            "1": {
+                "name": "AI in Everyday Life",
+                "topics": {
+                    "Home Devices": "Examples of AI in home appliances.",
+                    "Voice Assistants": "Introduction to AI assistants like Siri and Alexa."
+                }
+            }
+        }
+    }
+}
+
+
+class4_data = {
+    "Physics": {
+        "units": {
+            "1": {
+                "name": "Force and Motion",
+                "topics": {
+                    "What is Force?": "Basic understanding of force and its effects on objects.",
+                    "Types of Motion": "Explains different types of motion, including linear, rotational, and periodic."
+                }
+            },
+            "2": {
+                "name": "Light and Shadows",
+                "topics": {
+                    "Sources of Light": "Natural and artificial sources of light.",
+                    "Formation of Shadows": "How shadows are formed and their properties."
+                }
+            }
+        }
+    },
+    "Chemistry": {
+        "units": {
+            "1": {
+                "name": "States of Matter",
+                "topics": {
+                    "Solids, Liquids, and Gases": "Introduction to the three states of matter and their properties.",
+                    "Changes of State": "Explains melting, freezing, evaporation, and condensation."
+                }
+            }
+        }
+    },
+    "Biology": {
+        "units": {
+            "1": {
+                "name": "Plant Life",
+                "topics": {
+                    "Photosynthesis": "Detailed explanation of how plants make food.",
+                    "Reproduction in Plants": "Introduction to seeds, flowers, and pollination."
+                }
+            },
+            "2": {
+                "name": "Animal Life",
+                "topics": {
+                    "Adaptation in Animals": "How animals adapt to their environments.",
+                    "Food Chains": "Explains simple food chains in nature."
+                }
+            }
+        }
+    },
+    "AI": {
+        "units": {
+            "1": {
+                "name": "AI and Transportation",
+                "topics": {
+                    "AI in Cars": "How AI is used in self-driving cars.",
+                    "Traffic Management": "Understanding how AI helps manage traffic systems."
+                }
+            }
+        }
+    }
+}
+
+class5_data = {
+    "Physics": {
+        "units": {
+            "1": {
+                "name": "Energy and Work",
+                "topics": {
+                    "What is Energy?": "Different forms of energy and their uses.",
+                    "Work and Power": "Basic understanding of work, power, and their relationship."
+                }
+            },
+            "2": {
+                "name": "Electricity",
+                "topics": {
+                    "Introduction to Electricity": "Simple concepts of electric current and circuits.",
+                    "Conductors and Insulators": "Materials that allow or block electricity."
+                }
+            }
+        }
+    },
+    "Chemistry": {
+        "units": {
+            "1": {
+                "name": "Acids, Bases, and Salts",
+                "topics": {
+                    "What are Acids and Bases?": "Introduction to acids, bases, and their uses.",
+                    "Neutralization Reactions": "Explains what happens when acids and bases combine."
+                }
+            }
+        }
+    },
+    "Biology": {
+        "units": {
+            "1": {
+                "name": "Human Body Systems",
+                "topics": {
+                    "Digestive System": "Explains how food is digested and nutrients are absorbed.",
+                    "Respiratory System": "Understanding how we breathe and exchange gases."
+                }
+            },
+            "2": {
+                "name": "Environment",
+                "topics": {
+                    "Ecosystems": "Introduction to ecosystems and their importance.",
+                    "Conservation": "Why it is important to protect nature."
+                }
+            }
+        }
+    },
+    "AI": {
+        "units": {
+            "1": {
+                "name": "AI and Healthcare",
+                "topics": {
+                    "AI in Medicine": "How AI is used to diagnose diseases.",
+                    "Robotic Surgery": "Introduction to how robots are assisting in surgeries."
+                }
+            }
+        }
+    }
+}
+
+class6_data = {
+    "Physics": {
+        "units": {
+            "1": {
+                "name": "Motion and Speed",
+                "topics": {
+                    "Speed and Velocity": "Differences between speed and velocity.",
+                    "Acceleration": "Basic understanding of acceleration and deceleration."
+                }
+            },
+            "2": {
+                "name": "Heat",
+                "topics": {
+                    "Heat and Temperature": "Understanding the difference between heat and temperature.",
+                    "Methods of Heat Transfer": "Explains conduction, convection, and radiation."
+                }
+            }
+        }
+    },
+    "Chemistry": {
+        "units": {
+            "1": {
+                "name": "Elements, Compounds, and Mixtures",
+                "topics": {
+                    "What are Elements?": "Introduction to elements and their properties.",
+                    "Separation Techniques": "Methods to separate mixtures into pure substances."
+                }
+            }
+        }
+    },
+    "Biology": {
+        "units": {
+            "1": {
+                "name": "Living Organisms and Their Environment",
+                "topics": {
+                    "Adaptation": "How organisms adapt to survive in different environments.",
+                    "Food Webs": "Detailed explanation of interconnected food chains."
+                }
+            },
+            "2": {
+                "name": "Health and Hygiene",
+                "topics": {
+                    "Common Diseases": "Understanding the causes and prevention of diseases.",
+                    "Personal Hygiene": "Importance of cleanliness for good health."
+                }
+            }
+        }
+    },
+    "AI": {
+        "units": {
+            "1": {
+                "name": "AI in Communication",
+                "topics": {
+                    "Speech Recognition": "How AI is used to understand and process speech.",
+                    "Chatbots": "Introduction to how AI-powered chatbots work."
+                }
+            }
+        }
+    }
+}
+
+class7_data = {
+    "Physics": {
+        "units": {
+            "1": {
+                "name": "Laws of Motion",
+                "topics": {
+                    "Newton's Laws": "Detailed understanding of Newton's three laws of motion.",
+                    "Inertia and Momentum": "Basic explanation of inertia and momentum."
+                }
+            },
+            "2": {
+                "name": "Waves",
+                "topics": {
+                    "Types of Waves": "Introduction to sound waves and light waves.",
+                    "Characteristics of Waves": "Explains amplitude, wavelength, and frequency."
+                }
+            }
+        }
+    },
+    "Chemistry": {
+        "units": {
+            "1": {
+                "name": "Periodic Table",
+                "topics": {
+                    "Introduction to the Periodic Table": "Understanding the arrangement of elements.",
+                    "Groups and Periods": "Explains the concept of groups and periods in the periodic table."
+                }
+            }
+        }
+    },
+    "Biology": {
+        "units": {
+            "1": {
+                "name": "Tissues",
+                "topics": {
+                    "Plant Tissues": "Different types of plant tissues and their functions.",
+                    "Animal Tissues": "Different types of animal tissues and their functions."
+                }
+            },
+            "2": {
+                "name": "Reproduction",
+                "topics": {
+                    "Asexual Reproduction": "Introduction to binary fission, budding, and vegetative propagation.",
+                    "Sexual Reproduction": "Overview of sexual reproduction in plants and animals."
+                }
+            }
+        }
+    },
+    "AI": {
+        "units": {
+            "1": {
+                "name": "AI in Education",
+                "topics": {
+                    "AI Tutoring": "How AI helps in personalized learning.",
+                    "Learning Analytics": "Understanding how AI tracks progress and provides feedback."
+                }
+            }
+        }
+    }
+}
+
 class8_data = {
     "Physics": {
         "units": {
@@ -398,32 +826,55 @@ def get_class_subjects(class_number):
         return list(class9_data.keys())
     elif class_number == 8:
         return list(class8_data.keys())
+    elif class_number == 7:
+        return list(class7_data.keys())
+    elif class_number == 6:
+        return list(class6_data.keys())
+    elif class_number == 5:
+        return list(class5_data.keys())
+    elif class_number == 4:
+        return list(class4_data.keys())
     else:
         return []
 
 def get_class_units(class_number, subject):
-    if class_number == 10:
-        return class10_data[subject]["units"]
-    elif class_number == 9:
-        return class9_data[subject]["units"]
-    elif class_number == 8:
-        return class8_data[subject]["units"]
-    else:
-        return {}
+    class_data_map = {
+        10: class10_data,
+        9: class9_data,
+        8: class8_data,
+        7: class7_data,
+        6: class6_data,
+        5: class5_data,
+        4: class4_data,
+        3: class3_data,
+        2: class2_data,
+        1: class1_data
+    }
+    if class_number in class_data_map:
+        class_data = class_data_map[class_number]
+        if subject in class_data:
+            return class_data[subject]["units"]
+    return {}  # Return empty dictionary if data doesn't exist
 
 def build_llm_prompt(class_number, subject, unit_number, topic):
-    if class_number not in [8, 9, 10]:
+    if class_number not in range(1, 11):
         return "Invalid class number."
+
     units = get_class_units(class_number, subject)
-    if unit_number not in units:
+    if not units:
+        return "Invalid subject or no data available for the subject."
+
+    unit_data = units.get(unit_number)
+    if not unit_data:
         return "Invalid unit number."
-    topics = units[unit_number]["topics"]
+
+    topics = unit_data.get("topics", {})
     if topic not in topics:
         return "Invalid topic."
 
     return (
         f"You are teaching Class {class_number} {subject}.\n"
-        f"The current unit is '{units[unit_number]['name']}', and the topic is '{topic}'.\n\n"
+        f"The current unit is '{unit_data['name']}', and the topic is '{topic}'.\n\n"
         f"Please provide an engaging and detailed explanation about the topic '{topic}', "
         f"and suggest further related topics for the user to explore.\n"
     )
