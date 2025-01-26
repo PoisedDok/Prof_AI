@@ -21,9 +21,8 @@ from expert_mode import expert_mode_query
 from course_mode import load_demo_data
 from db import create_or_get_user
 from workers import AIWorker
+from course_data import get_class_units, build_llm_prompt,get_class_subjects
 
-# Our new course data with units and topics for Class 10
-from course_data import get_class10_subjects, get_class10_units, build_llm_prompt
 
 
 class MainWindow(QMainWindow):
@@ -192,51 +191,83 @@ class MainWindow(QMainWindow):
         return dock
 
     def _on_course_item_clicked(self, item, column):
-        """
-        If user clicks 'Class 10' -> Subject, we start the guided logic:
-         1) Show welcome & list of units in chat
-         2) Set flow_state to await_unit
-        """
+        logging.debug("Course item clicked: _on_course_item_clicked method entered")
         parent = item.parent()
-        if not parent:
-            return  # user clicked the Class item, do nothing unless it's Class 10
-        grade_text = parent.text(0)   # e.g. 'Class 10'
-        subject_text = item.text(0)   # e.g. 'Physics'
+        if parent and parent.text(0) in ["Class 10", "Class 9", "Class 8"]:
+            logging.debug("Parent item is a class item")
+            grade_text = parent.text(0)  # e.g. 'Class 10'
+            subject_text = item.text(0)  # e.g. 'Physics'
 
-        logging.debug(f"Course item clicked: {grade_text} -> {subject_text}")
-        if grade_text == "Class 10":
-            self._append_chat_message(f"You selected: {grade_text} > {subject_text}", sender='user')
-            self.start_class10_flow(subject_text)
+            logging.debug(f"Course item clicked: {grade_text} -> {subject_text}")
+            class_number = int(grade_text.split(" ")[1])
 
+            # Check if a course selection is already in progress
+            if self.flow_state == self.STATE_AWAIT_UNIT:
+                logging.debug("Course selection already in progress")
+                
+                # If trying to select the same course, do nothing
+                if (self.selected_subject == subject_text and 
+                    self.selected_class_number == class_number):
+                    logging.debug("Same course selected, ignoring")
+                    return
+                
+                # Prompt user about switching courses
+                switch_message = (
+                    f"You are currently selecting units for Class {self.selected_class_number} {self.selected_subject}. "
+                    f"Do you want to switch to Class {class_number} {subject_text}?\n"
+                    "Type 'yes' to switch or 'no' to continue with the current course."
+                )
+                self._append_chat_message(switch_message, sender='ai')
+                
+                # Store the new course details for potential switch
+                self.pending_subject = subject_text
+                self.pending_class_number = class_number
+                
+                return
+
+            # If flow state is idle, start a new course flow
+            logging.debug("Flow state is idle, proceeding with new flow")
+            self.start_class_flow(subject_text, class_number)
+
+        elif item.text(0) in ["Class 10", "Class 9", "Class 8"]:
+            logging.debug("Clicked on class item directly, doing nothing")
+            pass
     # -------------------------------------------------------------------------
     # Course Flow Methods
     # -------------------------------------------------------------------------
-    def start_class10_flow(self, subject: str):
+    def start_class_flow(self, subject: str, class_number: int):
         """
         1) Sets subject
         2) Shows welcome & list of units in one go
         3) Sets flow_state to 'await_unit'
         """
-        self._stop_flow()  # Cancel any existing flow
+        if self.flow_state != self.STATE_IDLE:
+            self._stop_flow()  # Stop any existing flow
+
+        # Reset flow state to idle before starting a new flow
+        self.flow_state = self.STATE_IDLE
+
         self.selected_subject = subject
+        self.selected_class_number = class_number
         self.flow_state = self.STATE_AWAIT_UNIT
 
         # Retrieve units
-        self.available_units = get_class10_units(subject)
+        self.available_units = get_class_units(class_number, subject)
         if not self.available_units:
             self._append_chat_message("No data available for this subject.", sender='ai')
             self.flow_state = self.STATE_IDLE
             return
 
         # Build a text listing all the units
-        lines = [f"Welcome to Class 10 {subject}!",
-                 "Here are the available units:\n"]
+        lines = [f"Welcome to Class {class_number} {subject}!",
+                "Here are the available units:\n"]
         for unit_num, unit_info in self.available_units.items():
             lines.append(f"{unit_num}. {unit_info['name']}")
         lines.append("Please type the *unit number* (e.g. 1, 2) in the chat to proceed, or 'stop' to cancel.")
         message = "\n".join(lines)
         self._append_chat_message(message, sender='ai')
-
+        
+        
     def user_selected_unit(self, unit_number: str):
         """
         Called when user typed the unit number in chat while in STATE_AWAIT_UNIT.
@@ -279,7 +310,7 @@ class MainWindow(QMainWindow):
 
         self.selected_topic = topic_name
         # Construct a prompt to the LLM
-        prompt = build_llm_prompt(self.selected_subject, self.selected_unit_number, topic_name)
+        prompt = build_llm_prompt(self.selected_class_number, self.selected_subject, self.selected_unit_number, topic_name)
         self.flow_state = self.STATE_IDLE  # or 'topic_talking', depending on how you want to manage further interactions
 
         self._append_chat_message(f"You selected topic: {topic_name}", sender='user')
@@ -332,8 +363,6 @@ class MainWindow(QMainWindow):
 
 
 
-
-
     # -------------------------------------------------------------------------
     # C. Chat Panel
     # -------------------------------------------------------------------------
@@ -375,22 +404,46 @@ class MainWindow(QMainWindow):
         self._append_chat_message(msg, sender='user')
         self.question_input.clear()
 
-        # If user typed 'stop' in any flow state
-        if msg.lower() == "stop":
-            self._append_chat_message("Flow stopped.", sender='ai')
-            self._stop_flow()
+        # Special handling for course switch
+        if self.flow_state == self.STATE_AWAIT_UNIT and hasattr(self, 'pending_subject'):
+            if msg.lower() == 'yes':
+                # User wants to switch courses
+                self._stop_flow()
+                self.start_class_flow(self.pending_subject, self.pending_class_number)
+                delattr(self, 'pending_subject')
+                delattr(self, 'pending_class_number')
+            elif msg.lower() == 'no':
+                # User wants to continue with current course
+                delattr(self, 'pending_subject')
+                delattr(self, 'pending_class_number')
             return
 
-        # Otherwise, handle logic based on state
+        # Check if user's message is a unit number
         if self.flow_state == self.STATE_AWAIT_UNIT:
-            # user typed a unit number?
-            self.user_selected_unit(msg)
+            try:
+                unit_number = int(msg)
+                if 1 <= unit_number <= len(self.available_units):
+                    self.user_selected_unit(str(unit_number))
+                else:
+                    self._append_chat_message("Invalid unit number. Please try again or 'stop'.", sender='ai')
+            except ValueError:
+                self._append_chat_message("Invalid input. Please enter a unit number.", sender='ai')
+
+        # Check if user's message is a topic number or name
         elif self.flow_state == self.STATE_AWAIT_TOPIC:
-            # user typed a topic name/number?
-            self.user_selected_topic(msg)
-        else:
-            # Normal chat with AIWorker
-            self._process_user_message(msg)
+            try:
+                topic_index = int(msg)
+                if 1 <= topic_index <= len(self.available_topics):
+                    topic_name = self.available_topics[topic_index - 1]
+                    self.user_selected_topic(topic_name)
+                else:
+                    self._append_chat_message("Invalid topic index. Try again or 'stop'.", sender='ai')
+            except ValueError:
+                if msg in self.available_topics:
+                    self.user_selected_topic(msg)
+                else:
+                    self._append_chat_message("Invalid topic name. Try again or 'stop'.", sender='ai')
+
 
     def _on_stop_flow_clicked(self):
         """
