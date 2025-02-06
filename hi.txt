@@ -1,0 +1,7 @@
+Prof
+Answer:
+Welcome to Class 6 Chemistry!
+Here are the available units:
+
+1. Elements, Compounds, and Mixtures
+Please type the unit number (e.g., 1, 2) in the chat to proceed, or 'stop' to cancel.

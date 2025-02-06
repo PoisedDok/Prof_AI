@@ -159,6 +159,7 @@ class MainWindow(QMainWindow):
     # -------------------------
     # A. Top Bar with Logo and Options
     # -------------------------
+    
     def _create_top_bar(self):
         top_bar_widget = QWidget()
         layout = QHBoxLayout(top_bar_widget)
@@ -181,22 +182,27 @@ class MainWindow(QMainWindow):
         btn_layout.setSpacing(12)
 
         self.btn_dark_mode = QToolButton()
-        self.btn_dark_mode.setText("Dark Mode")
+        self.btn_dark_mode.setIcon(QIcon("assets/dark_mode_icon.png"))
         self.btn_dark_mode.setCheckable(True)
         self.btn_dark_mode.setCursor(Qt.PointingHandCursor)
+        self.btn_dark_mode.setStyleSheet("background: transparent; border: none;")
         self.btn_dark_mode.clicked.connect(lambda: self.toggle_dark_mode(self.btn_dark_mode.isChecked()))
         btn_layout.addWidget(self.btn_dark_mode)
 
         self.btn_voice = QToolButton()
-        self.btn_voice.setText("Voice Output")
+        self.btn_voice.setIcon(QIcon("assets/voice_icon_off.png"))  # Default icon
         self.btn_voice.setCheckable(True)
         self.btn_voice.setCursor(Qt.PointingHandCursor)
+        self.btn_voice.setStyleSheet("background: transparent; border: none;")
         self.btn_voice.clicked.connect(lambda: self.toggle_voice(self.btn_voice.isChecked()))
         btn_layout.addWidget(self.btn_voice)
 
+
+
         self.btn_courses = QToolButton()
-        self.btn_courses.setText("Courses")
+        self.btn_courses.setIcon(QIcon("assets/courses_icon.png"))
         self.btn_courses.setCursor(Qt.PointingHandCursor)
+        self.btn_courses.setStyleSheet("background: transparent; border: none;")
         self.btn_courses.clicked.connect(self._toggle_course_dock)
         btn_layout.addWidget(self.btn_courses)
 
@@ -210,8 +216,12 @@ class MainWindow(QMainWindow):
         self.chat_display.setStyleSheet(chat_styles)
         self.question_input.setStyleSheet(chat_styles)
 
-    def toggle_voice(self, checked):
-        self.voice_enabled = checked
+    def toggle_voice(self,checked):
+            if checked:  # Check if toggled
+                self.btn_voice.setIcon(QIcon("assets/voice_icon_on.png"))
+            else:
+                self.btn_voice.setIcon(QIcon("assets/voice_icon_off.png"))
+            self.btn_voice.repaint()
 
     def _toggle_course_dock(self):
         self.course_dock.setVisible(not self.course_dock.isVisible())
@@ -405,17 +415,36 @@ class MainWindow(QMainWindow):
         chat_layout.setContentsMargins(20, 20, 20, 20)
         chat_layout.setSpacing(15)
 
-        # Header with Chat title and Export Chat button
+        # Header with Chat title and Export/Save/Load Chat buttons
         header_layout = QHBoxLayout()
         chat_title = QLabel("Chat with Prof AI")
         chat_title.setFont(QFont("Montserrat", 18, QFont.Bold))
         header_layout.addWidget(chat_title)
         header_layout.addStretch()
-        btn_export_chat = QToolButton()
-        btn_export_chat.setText("Export Chat")
-        btn_export_chat.setCursor(Qt.PointingHandCursor)
-        btn_export_chat.clicked.connect(self._export_chat)
-        header_layout.addWidget(btn_export_chat)
+
+        # Export Chat button (already present)
+        #btn_export_chat = QToolButton()
+        #btn_export_chat.setText("Export Chat")
+        #btn_export_chat.setCursor(Qt.PointingHandCursor)
+        #btn_export_chat.clicked.connect(self._export_chat)
+        #header_layout.addWidget(btn_export_chat)
+
+        # NEW: Save Chat button
+        btn_save_chat = QToolButton()
+        btn_save_chat.setIcon(QIcon("assets/save_icon.png"))
+        btn_save_chat.setCursor(Qt.PointingHandCursor)
+        btn_save_chat.setStyleSheet("background: transparent; border: none;")
+        btn_save_chat.clicked.connect(self._save_chat)
+        header_layout.addWidget(btn_save_chat)
+
+        # NEW: Load Chat button
+        btn_load_chat = QToolButton()
+        btn_load_chat.setIcon(QIcon("assets/load_icon.png"))
+        btn_load_chat.setCursor(Qt.PointingHandCursor)
+        btn_load_chat.setStyleSheet("background: transparent; border: none;")
+        btn_load_chat.clicked.connect(self._load_chat)
+        header_layout.addWidget(btn_load_chat)
+
         chat_layout.addLayout(header_layout)
 
         # Chat display area with modern translucent background and drop shadow
@@ -458,38 +487,42 @@ class MainWindow(QMainWindow):
 
         # Send button with a modern flat style
         btn_send = QToolButton()
-        btn_send.setText("Send")
+        btn_send.setIcon(QIcon("assets/send_icon.png"))
         btn_send.setCursor(Qt.PointingHandCursor)
         btn_send.setStyleSheet("""
             QToolButton {
-                background-color: #1976D2;
-                color: #FFFFFF;
-                border: none;
-                padding: 10px 16px;
-                border-radius: 8px;
-            }
-            QToolButton:hover {
-                background-color: #1565C0;
-            }
+            background: transparent;
+            border: none;
+            padding: 0px;
+            margin: 5px;
+        }
+
+        QToolButton:hover {
+            background: rgba(0, 0, 0, 0.1);  /* Optional: Slight hover effect */
+            border-radius: 4px;
+        }
+
         """)
         btn_send.clicked.connect(self._on_send_clicked)
         input_layout.addWidget(btn_send)
 
         # Stop button with a distinct color
         self.btn_stop_flow = QToolButton()
-        self.btn_stop_flow.setText("Stop")
+        self.btn_stop_flow.setIcon(QIcon("assets/stop_icon.png"))
         self.btn_stop_flow.setCursor(Qt.PointingHandCursor)
         self.btn_stop_flow.setStyleSheet("""
             QToolButton {
-                background-color: #E53935;
-                color: #FFFFFF;
-                border: none;
-                padding: 10px 16px;
-                border-radius: 8px;
-            }
-            QToolButton:hover {
-                background-color: #D32F2F;
-            }
+            background: transparent;
+            border: none;
+            padding: 0px;
+            margin: 5px;
+        }
+
+        QToolButton:hover {
+            background: rgba(0, 0, 0, 0.1);  /* Optional: Slight hover effect */
+            border-radius: 4px;
+        }
+
         """)
         self.btn_stop_flow.clicked.connect(self._on_stop_flow_clicked)
         input_layout.addWidget(self.btn_stop_flow)
@@ -500,6 +533,40 @@ class MainWindow(QMainWindow):
         self.question_input.textChanged.connect(self._on_text_changed)
         
         return chat_widget
+
+
+    def _save_chat(self):
+        """
+        Saves the current chat text as plain text to a file chosen by the user.
+        """
+        filename, _ = QFileDialog.getSaveFileName(self, "Save Chat", "", "Text Files (*.txt)")
+        if filename:
+            try:
+                # We save the plain text version of the entire chat_display.
+                chat_content = self.chat_display.toPlainText()
+                with open(filename, "w", encoding="utf-8") as f:
+                    f.write(chat_content)
+                QMessageBox.information(self, "Save Chat", f"Chat saved to {filename}.")
+            except Exception as e:
+                logging.error(f"Save chat failed: {e}")
+                QMessageBox.critical(self, "Save Error", f"Failed to save chat: {e}")
+
+    def _load_chat(self):
+        """
+        Loads a saved chat file (plain text) and replaces the current chat content.
+        """
+        filename, _ = QFileDialog.getOpenFileName(self, "Load Chat", "", "Text Files (*.txt)")
+        if filename:
+            try:
+                with open(filename, "r", encoding="utf-8") as f:
+                    loaded_content = f.read()
+                self.chat_display.clear()
+                self.chat_display.append(loaded_content)
+                QMessageBox.information(self, "Load Chat", f"Chat loaded from {filename}.")
+            except Exception as e:
+                logging.error(f"Load chat failed: {e}")
+                QMessageBox.critical(self, "Load Error", f"Failed to load chat: {e}")
+
 
     def eventFilter(self, source, event):
         if source == self.chat_display and event.type() == event.Resize:
