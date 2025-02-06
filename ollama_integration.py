@@ -2,47 +2,75 @@ import requests
 import json
 import logging
 
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+
+# Configuration for both APIs
 OLLAMA_HOST = "localhost"
 OLLAMA_PORT = 11434
+GEMINI_API_KEY = "AIzaSyD-Z8Qzus6wMzxsVW2ceOMqCTGRfSsW2qQ"  # Replace with your actual API key
 
-def ask_ollama(prompt):
+def ask_ai(prompt, model="ollama"):
     """
-    Sends the user's prompt to the Ollama AI and aggregates the streaming response.
+    Sends the user's prompt to the specified AI model (Ollama or Gemini) and aggregates the response.
     """
-    url = f"http://{OLLAMA_HOST}:{OLLAMA_PORT}/api/generate"
-    payload = {
-        "model": "falcon3:1b",  # Use your preferred model
-        "prompt": prompt
-    }
+    if model.lower() == "ollama":
+        url = f"http://{OLLAMA_HOST}:{OLLAMA_PORT}/api/generate"
+        payload = {
+            "model": "deepseek-r1:1.5b",
+            "prompt": prompt,
+            "stream": True  # Explicitly enable streaming
+        }
 
-    try:
-        logging.debug(f"Sending request to Ollama: {url} with payload: {payload}")
-        response = requests.post(url, json=payload, timeout=60, stream=True)
-        response.raise_for_status()
+        try:
+            logging.debug(f"Sending request to Ollama: {url}")
+            response = requests.post(url, json=payload, timeout=60, stream=True)
+            response.raise_for_status()
 
-        full_response = []
-        for chunk in response.iter_lines():
-            if chunk:
-                try:
-                    # Parse the chunk as JSON
-                    chunk_data = json.loads(chunk.decode("utf-8"))
-                    response_text = chunk_data.get("response", "")
-                    done = chunk_data.get("done", False)
-                    
-                    # Append to the full response
-                    full_response.append(response_text)
-                    
-                    # Stop if 'done' is True
-                    if done:
-                        break
-                except json.JSONDecodeError as e:
-                    logging.error(f"JSON decoding error: {e}")
-        
-        # Join the full response
-        final_response = ''.join(full_response)
-        logging.debug(f"Full response from AI: {final_response}")
-        return final_response.strip()
+            full_response = []
+            for chunk in response.iter_lines():
+                if chunk:
+                    try:
+                        chunk_data = json.loads(chunk.decode("utf-8"))
+                        if "response" in chunk_data:
+                            full_response.append(chunk_data["response"])
+                        if chunk_data.get("done", False):
+                            break
+                    except json.JSONDecodeError as e:
+                        logging.error(f"JSON decoding error: {e}")
+            
+            return ''.join(full_response).strip()
 
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Error communicating with Ollama: {e}")
-        return "Error: Unable to process your request."
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Ollama error: {e}")
+            return "Error: Unable to process your request."
+
+    elif model.lower() == "gemini":
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+        payload = {
+            "contents": [{
+                "parts": [{"text": prompt}]
+            }]
+        }
+
+        try:
+            logging.debug(f"Sending request to Gemini: {url}")
+            response = requests.post(url, json=payload, timeout=60)
+            response.raise_for_status()
+            response_data = response.json()
+            
+            # Parse Gemini response
+            if "candidates" in response_data:
+                return response_data["candidates"][0]["content"]["parts"][0]["text"].strip()
+            else:
+                logging.error(f"Unexpected Gemini response: {json.dumps(response_data, indent=2)}")
+                return "Error: Unexpected response format from Gemini."
+
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Gemini error: {str(e)}")
+            if hasattr(e, 'response') and e.response:
+                logging.error(f"Response content: {e.response.text}")
+            return "Error: Unable to process your request."
+
+    else:
+        return "Error: Unsupported model. Choose 'ollama' or 'gemini'."
