@@ -8,7 +8,7 @@ logging.basicConfig(level=logging.DEBUG)
 # Configuration for both APIs
 OLLAMA_HOST = "localhost"
 OLLAMA_PORT = 11434
-GEMINI_API_KEY = "AIzaSyD-Z8Qzus6wMzxsVW2ceOMqCTGRfSsW2qQ"  # Replace with your actual API key
+GEMINI_API_KEY = ""  # Replace with your actual API key
 
 def ask_ai(prompt, model="ollama"):
     """
