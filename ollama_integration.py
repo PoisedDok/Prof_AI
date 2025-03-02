@@ -17,7 +17,7 @@ def ask_ai(prompt, model="ollama"):
     if model.lower() == "ollama":
         url = f"http://{OLLAMA_HOST}:{OLLAMA_PORT}/api/generate"
         payload = {
-            "model": "deepseek-r1:1.5b",
+            "model": "qwen2.5-coder:0.5b",
             "prompt": prompt,
             "stream": True  # Explicitly enable streaming
         }

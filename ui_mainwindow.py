@@ -219,9 +219,10 @@ class MainWindow(QMainWindow):
     def toggle_voice(self,checked):
             if checked:  # Check if toggled
                 self.btn_voice.setIcon(QIcon("assets/voice_icon_on.png"))
+                self.voice_enabled = checked
             else:
                 self.btn_voice.setIcon(QIcon("assets/voice_icon_off.png"))
-            self.btn_voice.repaint()
+            
 
     def _toggle_course_dock(self):
         self.course_dock.setVisible(not self.course_dock.isVisible())

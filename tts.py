@@ -1,44 +1,78 @@
-import pyttsx3
+import os
+import asyncio
 from PyQt5.QtCore import QThread, pyqtSignal
-
+import edge_tts
+import simpleaudio as sa
+from pydub import AudioSegment
 
 class TTSThread(QThread):
     speaking = pyqtSignal()
     finished = pyqtSignal()
 
-    def __init__(self, text):
+    def __init__(self, text, voice="en-US-AriaNeural"):
         super().__init__()
         self.text = text
+        self.voice = voice
+        self.output_mp3 = "speech.mp3"
+        self.output_wav = "speech.wav"
+
+    async def generate_audio(self):
+        """Generate TTS audio file in MP3 format."""
+        try:
+            tts = edge_tts.Communicate(self.text, self.voice)
+            await tts.save(self.output_mp3)
+        except Exception as e:
+            print(f"Error generating TTS audio: {e}")
+
+    def convert_mp3_to_wav(self):
+        """Convert MP3 to WAV format for playback."""
+        try:
+            audio = AudioSegment.from_file(self.output_mp3, format="mp3")
+            audio.export(self.output_wav, format="wav")
+        except Exception as e:
+            print(f"Error converting MP3 to WAV: {e}")
+
+    def play_audio(self):
+        """Play the WAV file using simpleaudio."""
+        try:
+            wave_obj = sa.WaveObject.from_wave_file(self.output_wav)
+            play_obj = wave_obj.play()
+            play_obj.wait_done()  # Block until playback is finished
+        except Exception as e:
+            print(f"Error playing TTS audio: {e}")
+        finally:
+            # Cleanup files
+            if os.path.exists(self.output_mp3):
+                os.remove(self.output_mp3)
+            if os.path.exists(self.output_wav):
+                os.remove(self.output_wav)
 
     def run(self):
-        self.speaking.emit()  # Emit the speaking signal
-
-        # Create a new pyttsx3 engine instance for this thread
-        engine = pyttsx3.init()
-        engine.setProperty("rate", 160)  # Set the desired rate
-        engine.setProperty("volume", 1.0)  # Set the desired volume
-        voices = engine.getProperty("voices")
-        if voices:
-            engine.setProperty("voice", voices[0].id)  # Set the desired voice
-
-        # Run the text-to-speech
-        engine.say(self.text)
-        engine.runAndWait()
-
-        self.finished.emit()  # Emit the finished signal
+        """Main TTS processing function."""
+        self.speaking.emit()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(self.generate_audio())  # Generate MP3
+        self.convert_mp3_to_wav()  # Convert MP3 to WAV
+        self.play_audio()  # Play the WAV file
+        self.finished.emit()
 
 
 class OfflineTTS:
-    def __init__(self):
-        self.tts_thread = None  # Initialize tts_thread attribute
+    def __init__(self, default_voice="en-US-AriaNeural"):
+        self.tts_thread = None
+        self.voice = default_voice
+
+    def set_voice(self, voice):
+        """Change the voice dynamically."""
+        self.voice = voice
 
     def speak(self, text, on_speaking=None, on_finished=None):
-        # Stop any ongoing speech safely
+        """Generate and play speech asynchronously."""
         if self.tts_thread and self.tts_thread.isRunning():
             self.tts_thread.terminate()
 
-        # Create a new TTSThread for the current speech
-        self.tts_thread = TTSThread(text)
+        self.tts_thread = TTSThread(text, voice=self.voice)
         if on_speaking:
             self.tts_thread.speaking.connect(on_speaking)
         if on_finished:

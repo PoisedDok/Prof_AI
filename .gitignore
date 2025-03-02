@@ -137,7 +137,7 @@ venv.bak/
 
 # mkdocs documentation
 /site
-
+/ffmpeg-7.0.2-full_build
 # mypy
 .mypy_cache/
 .dmypy.json
